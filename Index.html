@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amenable — Web Support Pricing Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue: #1B4FD8;
+    --blue-light: #EEF3FF;
+    --blue-mid: #B8CAFF;
+    --green: #16A34A;
+    --green-light: #DCFCE7;
+    --amber: #D97706;
+    --amber-light: #FEF3C7;
+    --gray-50: #FAFAF9;
+    --gray-100: #F5F4F2;
+    --gray-200: #E8E6E1;
+    --gray-400: #A8A49C;
+    --gray-600: #6B6860;
+    --gray-900: #1C1B18;
+    --white: #FFFFFF;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  .container { max-width: 860px; margin: 0 auto; }
+
+  header { margin-bottom: 2.5rem; }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: 1.25rem;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2.25rem;
+    font-weight: 400;
+    color: var(--gray-900);
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 em { font-style: italic; color: var(--blue); }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--gray-600);
+    font-weight: 400;
+  }
+
+  .divider { height: 1px; background: var(--gray-200); margin: 2rem 0; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: 12px;
+  }
+
+  /* Billing toggle */
+  .billing-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 2rem;
+  }
+
+  .billing-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    color: var(--gray-600);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .billing-btn:hover { border-color: var(--blue-mid); color: var(--gray-900); }
+
+  .billing-btn.active {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: white;
+    font-weight: 500;
+  }
+
+  .billing-btn .discount-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.25);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 20px;
+    margin-left: 6px;
+  }
+
+  .billing-btn:not(.active) .discount-tag {
+    background: var(--green-light);
+    color: var(--green);
+  }
+
+  /* Cards */
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 2rem; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 2rem; }
+
+  .card {
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 1rem 1.125rem;
+    transition: border-color 0.15s;
+  }
+
+  .card.locked {
+    background: var(--blue-light);
+    border-color: var(--blue-mid);
+  }
+
+  .card.addon-active {
+    border-color: var(--blue);
+    background: var(--white);
+  }
+
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+
+  .card-info { flex: 1; }
+
+  .card-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-900);
+    margin-bottom: 3px;
+  }
+
+  .card-desc {
+    font-size: 11px;
+    color: var(--gray-600);
+    line-height: 1.5;
+  }
+
+  .locked-tag {
+    font-size: 10px;
+    font-weight: 500;
+    background: var(--blue);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Toggle switch */
+  .toggle-wrap { cursor: pointer; flex-shrink: 0; padding-top: 2px; }
+
+  .toggle {
+    width: 38px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--gray-200);
+    position: relative;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: block;
+  }
+
+  .toggle.on { background: var(--blue); }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+
+  .toggle.on::after { transform: translateX(16px); }
+
+  /* Hours input */
+  .hours-section {
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 1rem 1.125rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .hours-section label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--gray-900);
+  }
+
+  .hours-section .hint {
+    font-size: 11px;
+    color: var(--gray-400);
+    margin-top: 2px;
+  }
+
+  .hours-input-wrap { display: flex; align-items: center; gap: 8px; }
+
+  .hours-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--gray-200);
+    background: var(--white);
+    color: var(--gray-900);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+    line-height: 1;
+  }
+
+  .hours-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+  .hours-val {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--gray-900);
+    min-width: 30px;
+    text-align: center;
+  }
+
+  /* Summary metrics */
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+
+  .metric {
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 1rem 1.125rem;
+  }
+
+  .metric.highlight { background: var(--blue); border-color: var(--blue); }
+
+  .metric-label { font-size: 11px; color: var(--gray-400); margin-bottom: 6px; }
+  .metric.highlight .metric-label { color: rgba(255,255,255,0.7); }
+
+  .metric-value { font-size: 26px; font-weight: 500; color: var(--gray-900); line-height: 1; }
+  .metric.highlight .metric-value { color: white; }
+
+  .metric-sub { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+  .metric.highlight .metric-sub { color: rgba(255,255,255,0.6); }
+
+  /* Breakdown */
+  .breakdown {
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  .breakdown-header {
+    padding: 12px 16px;
+    background: var(--gray-100);
+    border-bottom: 1px solid var(--gray-200);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    font-size: 13px;
+    color: var(--gray-600);
+  }
+
+  .breakdown-row:last-child { border-bottom: none; }
+
+  .breakdown-row.total {
+    font-weight: 500;
+    color: var(--gray-900);
+    font-size: 14px;
+    background: var(--gray-50);
+  }
+
+  .breakdown-row.discount-row { color: var(--green); }
+
+  .breakdown-row .amount { font-weight: 500; color: var(--gray-900); }
+  .breakdown-row.discount-row .amount { color: var(--green); }
+
+  /* Floor notice */
+  .floor-notice {
+    display: none;
+    background: var(--amber-light);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--amber);
+    margin-bottom: 1rem;
+  }
+
+  .footnote {
+    font-size: 11px;
+    color: var(--gray-400);
+    line-height: 1.6;
+    margin-top: 0.5rem;
+  }
+
+  .footnote strong { color: var(--gray-600); }
+
+  @media (max-width: 600px) {
+    .grid-3 { grid-template-columns: 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .metrics { grid-template-columns: 1fr; }
+    h1 { font-size: 1.75rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">Amenable</div>
+    <h1>Web Support <em>Pricing</em> Calculator</h1>
+    <p class="subtitle">Scope and price each client's web support package — custom every time.</p>
+  </header>
+
+  <div class="section-label">Billing structure</div>
+  <div class="billing-row">
+    <button class="billing-btn active" onclick="setBilling('monthly')" id="btn-monthly">
+      Monthly payments
+    </button>
+    <button class="billing-btn" onclick="setBilling('annual')" id="btn-annual">
+      Annual payment <span class="discount-tag">8% off</span>
+    </button>
+  </div>
+
+  <div class="section-label">Non-negotiables — always included</div>
+  <div class="grid-3" style="margin-bottom:2rem;">
+    <div class="card locked">
+      <div class="card-header">
+        <div class="card-info">
+          <div class="card-name">John's hosted plan</div>
+          <div class="card-desc">Hosting, Breakdance, plugins, security, analytics & legal docs</div>
+        </div>
+        <div class="locked-tag">$430/yr</div>
+      </div>
+    </div>
+    <div class="card locked">
+      <div class="card-header">
+        <div class="card-info">
+          <div class="card-name">Yoast Pro (SEO)</div>
+          <div class="card-desc">Standard for all WordPress sites</div>
+        </div>
+        <div class="locked-tag">$118.80/yr</div>
+      </div>
+    </div>
+    <div class="card locked">
+      <div class="card-header">
+        <div class="card-info">
+          <div class="card-name">Base maintenance hours</div>
+          <div class="card-desc">Minimum 4 hrs/yr — billed at $200/hr</div>
+        </div>
+        <div class="locked-tag">$800/yr</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Additional support offerings — toggle on per client</div>
+  <div class="grid-2">
+    <div class="card" id="card-plugin-updates">
+      <div class="card-header">
+        <div class="card-info">
+          <div class="card-name">Plugin updates</div>
+          <div class="card-desc">~30 min/month, 6 hrs/yr @ $200/hr</div>
+        </div>
+        <div class="toggle-wrap" onclick="toggle('plugin-updates')">
+          <button class="toggle" id="toggle-plugin-updates"></button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="card-security">
+      <div class="card-header">
+        <div class="card-info">
+          <div class="card-name">Security tracking</div>
+          <div class="card-desc">Wordfence alerts + admin check, est. 1 hr/yr @ $200/hr</div>
+        </div>
+        <div class="toggle-wrap" onclick="toggle('security')">
+          <button class="toggle" id="toggle-security"></button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="card-monitoring">
+      <div class="card-header">
+        <div class="card-info">
+          <div class="card-name">Active monitoring</div>
+          <div class="card-desc">Pulsetic uptime monitoring — $150/yr to client</div>
+        </div>
+        <div class="toggle-wrap" onclick="toggle('monitoring')">
+          <button class="toggle" id="toggle-monitoring"></button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="card-outage">
+      <div class="card-header">
+        <div class="card-info">
+          <div class="card-name">Outage resolution reserve</div>
+          <div class="card-desc">5 hrs/yr reserved @ $200/hr</div>
+        </div>
+        <div class="toggle-wrap" onclick="toggle('outage')">
+          <button class="toggle" id="toggle-outage"></button>
+        </div>
+      </div>
+    </div>
+    <div class="card" id="card-analytics">
+      <div class="card-header">
+        <div class="card-info">
+          <div class="card-name">Analytics setup & reporting</div>
+          <div class="card-desc">Analytify/Google Analytics, est. 1 hr setup @ $200/hr</div>
+        </div>
+        <div class="toggle-wrap" onclick="toggle('analytics')">
+          <button class="toggle" id="toggle-analytics"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Extra maintenance hours</div>
+  <div class="hours-section">
+    <div>
+      <div style="font-size:13px;font-weight:500;color:var(--gray-900);margin-bottom:3px;">Additional hours beyond the 4hr minimum</div>
+      <div class="hint">Billed at $200/hr — add based on client's content update needs</div>
+    </div>
+    <div class="hours-input-wrap">
+      <button class="hours-btn" onclick="adjustHours(-1)">−</button>
+      <div class="hours-val" id="hours-display">0</div>
+      <button class="hours-btn" onclick="adjustHours(1)">+</button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Pricing summary</div>
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Amenable's hard cost</div>
+      <div class="metric-value" id="john-cost">$1,149</div>
+      <div class="metric-sub">John's plan + Yoast + labor</div>
+    </div>
+    <div class="metric highlight">
+      <div class="metric-label">Client price</div>
+      <div class="metric-value" id="client-price">$1,000</div>
+      <div class="metric-sub" id="client-sub">Floor applied</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Amenable margin</div>
+      <div class="metric-value" id="margin">—</div>
+      <div class="metric-sub" id="margin-pct">Per year</div>
+    </div>
+  </div>
+
+  <div class="floor-notice" id="floor-notice">Floor price of $1,000/yr applied — calculated price was lower than minimum.</div>
+
+  <div class="breakdown">
+    <div class="breakdown-header">
+      <span>Line item</span>
+      <span>Client price</span>
+    </div>
+    <div id="breakdown-rows"></div>
+  </div>
+
+  <p class="footnote">
+    <strong>Hard cost base:</strong> $430 (John's hosted plan) + $118.80 (Yoast Pro) = $548.80/yr. 
+    John's labor rate: $60/hr. Client rate: $200/hr. 
+    Floor price: $1,000/yr. Annual billing includes 8% discount.
+  </p>
+</div>
+
+<script>
+  const FLOOR = 1000;
+  const BASE_JOHN_COST = 548.80;
+  const JOHN_HOURLY = 60;
+  const CLIENT_HOURLY = 200;
+  const BASE_HRS = 4;
+  const DISCOUNT = 0.08;
+
+  const state = {
+    billing: 'monthly',
+    'plugin-updates': false,
+    security: false,
+    monitoring: false,
+    outage: false,
+    analytics: false,
+    extraHours: 0
+  };
+
+  const addons = {
+    'plugin-updates': { label: 'Plugin updates (6 hrs/yr)', johnCost: JOHN_HOURLY * 6, clientPrice: CLIENT_HOURLY * 6 },
+    security: { label: 'Security tracking (1 hr/yr)', johnCost: JOHN_HOURLY, clientPrice: CLIENT_HOURLY },
+    monitoring: { label: 'Active monitoring (Pulsetic)', johnCost: 50, clientPrice: 150 },
+    outage: { label: 'Outage resolution reserve (5 hrs/yr)', johnCost: JOHN_HOURLY * 5, clientPrice: CLIENT_HOURLY * 5 },
+    analytics: { label: 'Analytics setup (1 hr)', johnCost: JOHN_HOURLY, clientPrice: CLIENT_HOURLY }
+  };
+
+  function toggle(key) {
+    state[key] = !state[key];
+    document.getElementById('card-' + key).classList.toggle('addon-active', state[key]);
+    document.getElementById('toggle-' + key).classList.toggle('on', state[key]);
+    calculate();
+  }
+
+  function setBilling(type) {
+    state.billing = type;
+    document.getElementById('btn-monthly').classList.toggle('active', type === 'monthly');
+    document.getElementById('btn-annual').classList.toggle('active', type === 'annual');
+    calculate();
+  }
+
+  function adjustHours(delta) {
+    state.extraHours = Math.max(0, state.extraHours + delta);
+    document.getElementById('hours-display').textContent = state.extraHours;
+    calculate();
+  }
+
+  function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+
+  function calculate() {
+    let johnCost = BASE_JOHN_COST + (JOHN_HOURLY * BASE_HRS);
+    let clientRaw = CLIENT_HOURLY * BASE_HRS;
+
+    const rows = [
+      { label: "John's hosted plan (hosting, Breakdance, plugins, security, analytics, legal)", amount: '$430/yr', isJohn: true },
+      { label: 'Yoast Pro (SEO)', amount: '$118.80/yr', isJohn: true },
+      { label: 'Base maintenance hours (4 hrs @ $200/hr)', amount: fmt(CLIENT_HOURLY * BASE_HRS) + '/yr' }
+    ];
+
+    for (const [key, addon] of Object.entries(addons)) {
+      if (state[key]) {
+        johnCost += addon.johnCost;
+        clientRaw += addon.clientPrice;
+        rows.push({ label: addon.label, amount: fmt(addon.clientPrice) + '/yr' });
+      }
+    }
+
+    if (state.extraHours > 0) {
+      const extraClient = state.extraHours * CLIENT_HOURLY;
+      johnCost += state.extraHours * JOHN_HOURLY;
+      clientRaw += extraClient;
+      rows.push({ label: 'Extra maintenance hours (' + state.extraHours + ' hrs @ $200/hr)', amount: fmt(extraClient) + '/yr' });
+    }
+
+    const floorApplied = clientRaw < FLOOR;
+    let clientAnnual = floorApplied ? FLOOR : clientRaw;
+    let discountAmt = 0;
+
+    if (state.billing === 'annual') {
+      discountAmt = Math.round(clientAnnual * DISCOUNT);
+      clientAnnual -= discountAmt;
+    }
+
+    const monthly = Math.round(clientAnnual / 12);
+    const margin = clientAnnual - johnCost;
+    const marginPct = Math.round((margin / clientAnnual) * 100);
+
+    document.getElementById('john-cost').textContent = fmt(johnCost);
+    document.getElementById('client-price').textContent = state.billing === 'monthly' ? fmt(monthly) + '/mo' : fmt(clientAnnual) + '/yr';
+    document.getElementById('client-sub').textContent = state.billing === 'monthly' ? '(' + fmt(clientAnnual) + '/yr)' : (discountAmt > 0 ? '8% annual discount applied' : 'Billed annually');
+    document.getElementById('margin').textContent = margin > 0 ? fmt(margin) : '—';
+    document.getElementById('margin-pct').textContent = marginPct > 0 ? marginPct + '% margin per year' : 'Per year';
+    document.getElementById('floor-notice').style.display = floorApplied ? 'block' : 'none';
+
+    let html = '';
+    for (const row of rows) {
+      html += '<div class="breakdown-row"><span>' + row.label + '</span><span class="amount">' + row.amount + '</span></div>';
+    }
+    if (discountAmt > 0) {
+      html += '<div class="breakdown-row discount-row"><span>Annual discount (8%)</span><span class="amount">−' + fmt(discountAmt) + '</span></div>';
+    }
+    html += '<div class="breakdown-row total"><span>Total</span><span class="amount">' + (state.billing === 'monthly' ? fmt(monthly) + '/mo' : fmt(clientAnnual) + '/yr') + '</span></div>';
+    document.getElementById('breakdown-rows').innerHTML = html;
+  }
+
+  calculate();
+</script>
+</body>
+</html>
